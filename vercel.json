@@ -1,0 +1,13 @@
+{
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/mission-match",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/990-audit",
+      "schedule": "0 2 * * 0"
+    }
+  ]
+}
