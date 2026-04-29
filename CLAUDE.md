@@ -63,3 +63,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## Project Context — Propello
+
+**Stack:** Next.js · React · Tailwind CSS · Vercel (frontend) · Supabase (backend) · Clerk (auth) · Stripe (payments) · Beehiiv (newsletter) · Python agents · ProPublica API
+
+**Antigravity is NOT a project dependency.** References to "Antigravity" in source documents are prompts the developer used in an external tool during planning. All agent logic (intake, mission-match, fit scoring, 990 audit) is built as Python scripts inside this repo and scheduled via Vercel Cron or equivalent. Do not assume or introduce any Antigravity dependency.
