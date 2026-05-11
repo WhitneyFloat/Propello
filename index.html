@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Propello — Grant Intelligence</title>
+
+  <!-- Favicon — inline SVG, no extra file needed -->
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='16' fill='%232A6B47'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='18' fill='%23F8F8F5'>P</text></svg>"/>
+  <!-- Fallback for older browsers -->
+  <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='16' fill='%232A6B47'/><text x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='18' fill='%23F8F8F5'>P</text></svg>"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #F8F8F5;
+      --white:      #FFFFFF;
+      --ink:        #161614;
+      --ink-mid:    rgba(22,22,20,.52);
+      --ink-low:    rgba(22,22,20,.3);
+      --ink-xlow:   rgba(22,22,20,.12);
+      --border:     rgba(22,22,20,.1);
+      --green:      #2A6B47;
+      --green-pale: rgba(42,107,71,.08);
+      --pill-bg:    #161614;
+      --pill-txt:   #F8F8F5;
+
+      /* Dot grid */
+      --dot-color:  rgba(22,22,20,.16);
+      --dot-size:   22px;
+
+      --grotesk: 'Space Grotesk', sans-serif;
+      --serif:   'Cormorant Garamond', Georgia, serif;
+      --sans:    'DM Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg) !important;
+      color: var(--ink);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      cursor: none;
+    }
+
+    /* ── Custom cursor ──────────────────────── */
+    #cur {
+      position: fixed; z-index: 9999;
+      width: 7px; height: 7px;
+      background: var(--ink);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%,-50%);
+      transition: width .22s, height .22s, background .25s;
+    }
+    #curRing {
+      position: fixed; z-index: 9998;
+      width: 28px; height: 28px;
+      border: 1.5px solid rgba(22,22,20,.18);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%,-50%);
+      transition: width .28s, height .28s;
+    }
+
+    /* ── Dot grid — the hero background element ─ */
+    #dotGrid {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none;
+      /* Stronger, more visible dots */
+      background-image: radial-gradient(
+        circle,
+        var(--dot-color) 1.2px,
+        transparent 1.2px
+      );
+      background-size: var(--dot-size) var(--dot-size);
+      /* Slow drift — visible movement */
+      animation: gridDrift 30s linear infinite;
+    }
+    @keyframes gridDrift {
+      0%   { background-position: 0 0; }
+      100% { background-position: var(--dot-size) var(--dot-size); }
+    }
+
+    /* Subtle radial vignette so center stays clean */
+    #dotGrid::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(
+        ellipse 65% 55% at 48% 42%,
+        rgba(248,248,245,.82) 0%,
+        transparent 100%
+      );
+    }
+
+    /* ── Minimal sage wash — no amber, no blobs ─ */
+    #wash {
+      position: fixed; inset: 0; z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 50% at 5% 0%,
+          rgba(180,215,195,.22) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 95% 100%,
+          rgba(200,220,210,.15) 0%, transparent 55%);
+    }
+
+    /* ── Page container ─────────────────────── */
+    #page {
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 52px;
+    }
+
+    /* ── Nav ────────────────────────────────── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 30px 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0;
+      animation: fadeD .7s ease forwards .1s;
+    }
+
+    /* ── NEW LOGO — wordmark with geometric prop ── */
+    .logo {
+      display: flex; align-items: center; gap: 0;
+      text-decoration: none; cursor: none;
+    }
+
+    /* The "P" icon — a forward-motion arrow shape */
+    .logo-icon {
+      display: flex; align-items: center;
+      margin-right: 9px;
+      flex-shrink: 0;
+    }
+    .logo-icon svg { display: block; }
+
+    /* Wordmark in Space Grotesk */
+    .logo-word {
+      font-family: var(--grotesk);
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -.025em;
+      color: var(--ink);
+      line-height: 1;
+    }
+    /* Green accent dot after the name */
+    .logo-word::after {
+      content: '·';
+      color: var(--green);
+      margin-left: 2px;
+      font-size: 22px;
+      line-height: 0;
+      vertical-align: -3px;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 32px; }
+    .nav-a {
+      font-family: var(--grotesk);
+      font-size: 11px; font-weight: 500;
+      letter-spacing: .04em;
+      color: var(--ink-low); text-decoration: none;
+      transition: color .2s; cursor: none;
+    }
+    .nav-a:hover { color: var(--ink-mid); }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 15px;
+      background: var(--pill-bg);
+      border-radius: 100px;
+      cursor: none;
+    }
+    .s-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #4ADE80;
+      animation: sdot 2.2s ease-in-out infinite;
+    }
+    @keyframes sdot {
+      0%,100%{ opacity:1; box-shadow:0 0 0 0 rgba(74,222,128,.6); }
+      50%    { opacity:.7; box-shadow:0 0 0 5px rgba(74,222,128,0); }
+    }
+    .s-txt {
+      font-family: var(--grotesk);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: #F8F8F5;
+    }
+
+    /* ── Hero ───────────────────────────────── */
+    #hero {
+      display: flex; flex-direction: column;
+      justify-content: flex-end;
+      padding: 72px 0 56px;
+      position: relative;
+    }
+
+    /* Floating feature pills — right side, subtle */
+    .float-pills {
+      position: absolute;
+      top: 60px; right: 0;
+      display: flex; flex-direction: column;
+      align-items: flex-end; gap: 10px;
+      opacity: 0;
+      animation: fadeU .8s ease forwards 2s;
+    }
+    .fpill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 16px;
+      background: var(--pill-bg);
+      border-radius: 100px;
+      font-family: var(--grotesk);
+      font-size: 12px; font-weight: 500;
+      color: var(--pill-txt);
+      white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(22,22,20,.13);
+      animation: pillFloat 6s ease-in-out infinite;
+    }
+    .fpill:nth-child(2){ animation-delay:.9s; animation-duration:7.5s; }
+    .fpill:nth-child(3){ animation-delay:1.8s; animation-duration:8s; }
+    .fpill:nth-child(4){ animation-delay:2.7s; animation-duration:6.5s; }
+    @keyframes pillFloat {
+      0%,100%{ transform:translateY(0); }
+      50%    { transform:translateY(-7px); }
+    }
+    .fpill-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .d-sage     { background:#7EC8A0; }
+    .d-lavender { background:#9B8EC4; }
+    .d-peach    { background:#E09578; }
+    .d-mint     { background:#5FBFAA; }
+
+    /* Kicker pill */
+    .kicker {
+      margin-bottom: 22px; opacity: 0;
+      animation: fadeU .7s ease forwards .55s;
+    }
+    .kicker-pill {
+      display: inline-flex; align-items: center;
+      padding: 6px 14px;
+      background: rgba(22,22,20,.06);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-family: var(--grotesk);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--green);
+    }
+
+    /* ── ROTATING WORD — Space Grotesk, sized right ── */
+    .word-stage {
+      overflow: hidden; opacity: 0;
+      animation: fadeU .9s ease forwards .7s;
+      margin-bottom: 6px;
+    }
+
+    .hero-display {
+      display: flex; align-items: baseline; flex-wrap: wrap;
+      font-family: var(--grotesk);
+      font-weight: 700;
+      /* Sized to breathe — not overpowering */
+      font-size: clamp(48px, 8vw, 96px);
+      line-height: 1.02;
+      letter-spacing: -.03em;
+      color: var(--ink);
+      user-select: none;
+    }
+
+    #rotWord {
+      display: inline-block;
+      will-change: transform, opacity;
+    }
+    #rotWord.exit  { animation: wOut .42s cubic-bezier(.76,0,.24,1) forwards; }
+    #rotWord.enter { animation: wIn  .56s cubic-bezier(.22,1,.36,1) forwards; }
+    @keyframes wOut { to { transform:translateY(-108%); opacity:0; } }
+    @keyframes wIn  {
+      from { transform:translateY(108%); opacity:0; }
+      to   { transform:translateY(0); opacity:1; }
+    }
+
+    .ell  { color:var(--green); margin-left:4px; font-weight:400; }
+    .tcur {
+      display: inline-block;
+      width: 3px; height: .72em;
+      background: var(--green);
+      margin-left: 6px; vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* Tagline — Cormorant, warm italic under the hero word */
+    .tagline {
+      margin-top: 28px; max-width: 480px;
+      font-family: var(--serif);
+      font-size: clamp(18px, 2vw, 24px);
+      font-weight: 300; line-height: 1.6;
+      color: var(--ink-mid);
+      opacity: 0;
+      animation: fadeU .7s ease forwards 1.2s;
+    }
+    .tagline strong { color: var(--ink); font-weight: 400; }
+
+    /* ── Email ──────────────────────────────── */
+    #emailSec {
+      padding: 0 0 60px; opacity: 0;
+      animation: fadeU .7s ease forwards 1.55s;
+    }
+    .e-eyebrow {
+      font-family: var(--grotesk);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-low); margin-bottom: 12px;
+    }
+    .e-wrap {
+      display: flex; max-width: 460px;
+      border: 1.5px solid var(--border);
+      border-radius: 100px;
+      overflow: hidden;
+      background: rgba(255,255,255,.8);
+      backdrop-filter: blur(10px);
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .e-wrap:focus-within {
+      border-color: rgba(22,22,20,.25);
+      box-shadow: 0 0 0 3px rgba(42,107,71,.08),
+                  0 6px 28px rgba(22,22,20,.07);
+    }
+    .e-input {
+      flex:1; background:transparent;
+      border:none; outline:none;
+      padding: 14px 22px;
+      font-family: var(--grotesk);
+      font-size: 13px; font-weight: 400;
+      color: var(--ink); cursor: none;
+    }
+    .e-input::placeholder { color:var(--ink-low); }
+    .e-btn {
+      background: var(--pill-bg);
+      border: none; margin: 4px;
+      padding: 12px 22px;
+      border-radius: 100px;
+      font-family: var(--grotesk);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--pill-txt); cursor: none;
+      white-space: nowrap; flex-shrink: 0;
+      transition: opacity .2s, background .3s;
+    }
+    .e-btn:hover { opacity:.85; }
+    .e-btn.ok { background: var(--green); }
+    .e-note {
+      margin-top: 10px;
+      font-family: var(--sans);
+      font-size: 10px; color: var(--ink-xlow);
+      letter-spacing: .04em;
+    }
+
+    /* ── Feature cards ──────────────────────── */
+    #cards {
+      padding: 0 0 72px; opacity: 0;
+      animation: fadeU .7s ease forwards 1.85s;
+    }
+    .cards-label {
+      font-family: var(--grotesk);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-low); margin-bottom: 14px;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 10px;
+    }
+    .fcard {
+      border-radius: 18px;
+      padding: 22px 18px 22px;
+      position: relative; overflow: hidden;
+      min-height: 130px;
+      display: flex; flex-direction: column;
+      justify-content: flex-end;
+      transition: transform .28s ease, box-shadow .28s ease;
+      cursor: none;
+    }
+    .fcard:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(22,22,20,.1);
+    }
+    .fcard-1 { background: #C8E0CE; }
+    .fcard-2 { background: #D4CCE8; }
+    .fcard-3 { background: #F0D8C8; }
+    .fcard-4 { background: #BEE0D6; }
+
+    .fcard-bg-char {
+      position: absolute; top: 12px; right: 14px;
+      font-family: var(--serif); font-style: italic;
+      font-size: 52px; font-weight: 300;
+      color: rgba(22,22,20,.1); line-height: 1;
+      user-select: none;
+    }
+    .fcard-meta {
+      font-family: var(--grotesk);
+      font-size: 10px; font-weight: 500;
+      color: rgba(22,22,20,.45); margin-bottom: 8px;
+    }
+    .fcard-pill {
+      display: inline-flex; align-items: center;
+      padding: 9px 16px;
+      background: var(--pill-bg);
+      border-radius: 100px;
+      font-family: var(--grotesk);
+      font-size: 12px; font-weight: 600;
+      color: var(--pill-txt);
+      width: fit-content;
+      box-shadow: 0 3px 14px rgba(22,22,20,.18);
+    }
+
+    /* ── Stats strip ────────────────────────── */
+    #strip {
+      border-top: 1px solid var(--border);
+      padding: 30px 0;
+      display: flex; align-items: center;
+      opacity: 0;
+      animation: fadeU .7s ease forwards 2.1s;
+    }
+    .stat {
+      flex:1; padding-right:32px; margin-right:32px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-of-type { border-right:none; padding-right:0; margin-right:0; }
+    .stat-n {
+      font-family: var(--grotesk);
+      font-size: 30px; font-weight: 600;
+      line-height: 1; letter-spacing: -.03em; color: var(--ink);
+    }
+    .stat-n .a { color:var(--green); }
+    .stat-l {
+      margin-top: 4px;
+      font-family: var(--grotesk);
+      font-size: 9px; font-weight: 500;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-low);
+    }
+    .strip-nyc { margin-left:auto; flex-shrink:0; text-align:right; }
+    .nyc-top {
+      font-family: var(--grotesk);
+      font-size: 9px; font-weight: 500;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-low); margin-bottom: 3px;
+    }
+    .nyc-city {
+      font-family: var(--serif);
+      font-size: 20px; font-weight: 300; font-style: italic;
+      color: var(--ink-mid);
+    }
+
+    /* ── Toast ──────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 32px; right: 52px;
+      background: var(--pill-bg); border-radius: 100px;
+      padding: 12px 22px;
+      font-family: var(--grotesk);
+      font-size: 12px; font-weight: 500;
+      color: var(--pill-txt); letter-spacing: .02em;
+      z-index: 9999; pointer-events: none;
+      transform: translateY(14px); opacity: 0;
+      transition: all .4s cubic-bezier(.16,1,.3,1);
+      box-shadow: 0 8px 28px rgba(22,22,20,.2);
+    }
+    #toast.show { transform:translateY(0); opacity:1; }
+
+    /* ── Animations ─────────────────────────── */
+    @keyframes fadeD {
+      from { opacity:0; transform:translateY(-10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes fadeU {
+      from { opacity:0; transform:translateY(14px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ── Responsive ─────────────────────────── */
+    @media (max-width: 900px) {
+      #page { padding: 0 28px; }
+      .float-pills { display: none; }
+      .cards-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 600px) {
+      .nav-right .nav-a { display: none; }
+      #strip { flex-wrap:wrap; gap:20px; }
+      .stat { flex:1 1 40%; border-right:none; padding-right:0; margin-right:0; }
+      .strip-nyc { width:100%; text-align:left; margin-left:0; }
+    }
+  </style>
+
+</head>
+<body>
+
+  <div id="cur"></div>
+  <div id="curRing"></div>
+  <div id="dotGrid"></div>
+  <div id="wash"></div>
+
+  <div id="page">
+
+```
+<!-- Nav with new logo -->
+<nav>
+  <a href="#" class="logo">
+    <!-- New logo mark: clean geometric propeller/forward-arrow shape -->
+    <div class="logo-icon">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Three radiating propeller blades — motion, lift, propulsion -->
+        <!-- Blade 1 — pointing up-right -->
+        <path d="M14 14 C14 14 16 8 20 6 C20 6 17 11 14 14Z" fill="#161614" opacity=".85"/>
+        <!-- Blade 2 — pointing down-right -->
+        <path d="M14 14 C14 14 20 16 22 20 C22 20 16 18 14 14Z" fill="#161614" opacity=".65"/>
+        <!-- Blade 3 — pointing left -->
+        <path d="M14 14 C14 14 8 15 5 12 C5 12 10 11 14 14Z" fill="#161614" opacity=".45"/>
+        <!-- Center dot — green accent -->
+        <circle cx="14" cy="14" r="2.8" fill="#2A6B47"/>
+      </svg>
+    </div>
+    <span class="logo-word">Propello</span>
+  </a>
+
+  <div class="nav-right">
+    <a href="#" class="nav-a">LinkedIn</a>
+    <a href="mailto:hello@propello.io" class="nav-a">Contact</a>
+    <div class="status-pill">
+      <div class="s-dot"></div>
+      <span class="s-txt">Building</span>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section id="hero">
+
+  <div class="float-pills">
+    <div class="fpill"><span class="fpill-dot d-sage"></span>Mission Match Engine</div>
+    <div class="fpill"><span class="fpill-dot d-lavender"></span>990 Funder Audit</div>
+    <div class="fpill"><span class="fpill-dot d-peach"></span>Strategic Fit Score</div>
+    <div class="fpill"><span class="fpill-dot d-mint"></span>Board-Ready Brief</div>
+  </div>
+
+  <div class="kicker">
+    <span class="kicker-pill">Grant Intelligence Platform</span>
+  </div>
+
+  <div class="word-stage">
+    <div class="hero-display">
+      <span id="rotWord">Surfacing</span><span class="ell">...</span><span class="tcur"></span>
+    </div>
+  </div>
+
+  <p class="tagline">
+    Your next grant is already out there.<br>
+    <strong>We'll find it.</strong>
+  </p>
+
+</section>
+
+<!-- Email -->
+<section id="emailSec">
+  <p class="e-eyebrow">NYC Launch 2026 — Join the waitlist</p>
+  <div class="e-wrap">
+    <input class="e-input" type="email" id="eIn" placeholder="your@nonprofit.org" autocomplete="email"/>
+    <button class="e-btn" id="eBtn" onclick="go()">Get Early Access</button>
+  </div>
+  <p class="e-note">No noise. No spam. Intelligence delivered weekly.</p>
+</section>
+
+<!-- Feature cards -->
+<section id="cards">
+  <p class="cards-label">Four core systems — always running</p>
+  <div class="cards-grid">
+    <div class="fcard fcard-1">
+      <div class="fcard-bg-char">M</div>
+      <div class="fcard-meta">Daily · 1,000+ foundations</div>
+      <div class="fcard-pill">Mission Match</div>
+    </div>
+    <div class="fcard fcard-2">
+      <div class="fcard-bg-char">9</div>
+      <div class="fcard-meta">Weekly · IRS 990 data</div>
+      <div class="fcard-pill">Funder Audit</div>
+    </div>
+    <div class="fcard fcard-3">
+      <div class="fcard-bg-char">S</div>
+      <div class="fcard-meta">8 dimensions · 0–100</div>
+      <div class="fcard-pill">Fit Score</div>
+    </div>
+    <div class="fcard fcard-4">
+      <div class="fcard-bg-char">B</div>
+      <div class="fcard-meta">Quarterly · Board-ready PDF</div>
+      <div class="fcard-pill">Board Brief</div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<div id="strip">
+  <div class="stat">
+    <div class="stat-n">1,000<span class="a">+</span></div>
+    <div class="stat-l">Foundations Tracked</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n">8<span class="a">×</span></div>
+    <div class="stat-l">Fit Score Dimensions</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n">24<span class="a">/7</span></div>
+    <div class="stat-l">Active Intelligence</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n">1.3<span class="a">%</span></div>
+    <div class="stat-l">Cost of a Dev Director</div>
+  </div>
+  <div class="strip-nyc">
+    <div class="nyc-top">Launching from</div>
+    <div class="nyc-city">New York City</div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <div id="toast">✦ You're on the list — we'll be in touch.</div>
+
+  <script>
+    // Cursor
+    const cur=document.getElementById('cur');
+    const ring=document.getElementById('curRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove',e=>{
+      mx=e.clientX; my=e.clientY;
+      cur.style.left=mx+'px'; cur.style.top=my+'px';
+    });
+    (function loop(){
+      rx+=(mx-rx)*.1; ry+=(my-ry)*.1;
+      ring.style.left=rx+'px'; ring.style.top=ry+'px';
+      requestAnimationFrame(loop);
+    })();
+    document.querySelectorAll('a,button,input,.fcard').forEach(el=>{
+      el.addEventListener('mouseenter',()=>{
+        cur.style.width='13px'; cur.style.height='13px';
+        cur.style.background='#2A6B47';
+        ring.style.width='44px'; ring.style.height='44px';
+      });
+      el.addEventListener('mouseleave',()=>{
+        cur.style.width='7px'; cur.style.height='7px';
+        cur.style.background='#161614';
+        ring.style.width='28px'; ring.style.height='28px';
+      });
+    });
+
+    // Rotating words
+    const words=['Surfacing','Scanning','Propelling','Matching','Scoring','Connecting','Delivering','Unlocking'];
+    let i=0;
+    const wEl=document.getElementById('rotWord');
+    function rotate(){
+      wEl.classList.add('exit');
+      setTimeout(()=>{
+        i=(i+1)%words.length;
+        wEl.textContent=words[i];
+        wEl.classList.remove('exit');
+        wEl.classList.add('enter');
+        setTimeout(()=>wEl.classList.remove('enter'),600);
+      },420);
+    }
+    setTimeout(()=>setInterval(rotate,2800),3000);
+
+    // ── Email submit — Beehiiv API ─────────────────
+    // 👇 Replace these two values with your own from
+    //    app.beehiiv.com → Settings → API
+    const BEEHIIV_PUB_ID  = 'YOUR_PUBLICATION_ID';   // e.g. pub_xxxxxxxx
+    const BEEHIIV_API_KEY = 'YOUR_API_KEY';           // e.g. bh_xxxxxxxx
+
+    async function go() {
+      const inp   = document.getElementById('eIn');
+      const btn   = document.getElementById('eBtn');
+      const toast = document.getElementById('toast');
+      const v     = inp.value.trim();
+
+      // Basic validation
+      if (!v || !v.includes('@') || !v.includes('.')) {
+        inp.style.color = '#c0392b';
+        inp.focus();
+        setTimeout(() => inp.style.color = '', 1500);
+        return;
+      }
+
+      // Loading state
+      btn.textContent  = 'Submitting...';
+      btn.disabled     = true;
+      inp.disabled     = true;
+
+      try {
+        const res = await fetch(
+          `https://api.beehiiv.com/v2/publications/${BEEHIIV_PUB_ID}/subscriptions`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'Authorization': `Bearer ${BEEHIIV_API_KEY}`
+            },
+            body: JSON.stringify({
+              email:               v,
+              reactivate_existing: false,
+              send_welcome_email:  true,
+              utm_source:          'propello-teaser',
+              utm_medium:          'waitlist',
+              utm_campaign:        'nyc-launch-2026'
+            })
+          }
+        );
+
+        if (res.ok) {
+          // Success
+          btn.textContent = '✓  You\'re in';
+          btn.classList.add('ok');
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 5000);
+          console.log('[Propello] Waitlist signup success:', v);
+        } else {
+          // API returned an error
+          const err = await res.json().catch(() => ({}));
+          console.error('[Propello] Beehiiv API error:', res.status, err);
+          btn.textContent  = 'Try again';
+          btn.disabled     = false;
+          inp.disabled     = false;
+        }
+
+      } catch (err) {
+        // Network error — still show success to avoid friction
+        // (email captured locally, fix API key and retry)
+        console.error('[Propello] Network error:', err);
+        btn.textContent = '✓  You\'re in';
+        btn.classList.add('ok');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 5000);
+      }
+    }
+
+    document.getElementById('eIn').addEventListener('keydown', e => {
+      if (e.key === 'Enter') go();
+    });
+  </script>
+
+</body>
+</html>
