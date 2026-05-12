@@ -210,40 +210,6 @@
       position: relative;
     }
 
-    /* Floating feature pills — right side, subtle */
-    .float-pills {
-      position: absolute;
-      top: 60px; right: 0;
-      display: flex; flex-direction: column;
-      align-items: flex-end; gap: 10px;
-      opacity: 0;
-      animation: fadeU .8s ease forwards 2s;
-    }
-    .fpill {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 9px 16px;
-      background: var(--pill-bg);
-      border-radius: 100px;
-      font-family: var(--grotesk);
-      font-size: 12px; font-weight: 500;
-      color: var(--pill-txt);
-      white-space: nowrap;
-      box-shadow: 0 4px 18px rgba(22,22,20,.13);
-      animation: pillFloat 6s ease-in-out infinite;
-    }
-    .fpill:nth-child(2){ animation-delay:.9s; animation-duration:7.5s; }
-    .fpill:nth-child(3){ animation-delay:1.8s; animation-duration:8s; }
-    .fpill:nth-child(4){ animation-delay:2.7s; animation-duration:6.5s; }
-    @keyframes pillFloat {
-      0%,100%{ transform:translateY(0); }
-      50%    { transform:translateY(-7px); }
-    }
-    .fpill-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-    .d-sage     { background:#7EC8A0; }
-    .d-lavender { background:#9B8EC4; }
-    .d-peach    { background:#E09578; }
-    .d-mint     { background:#5FBFAA; }
-
     /* Kicker pill */
     .kicker {
       margin-bottom: 22px; opacity: 0;
@@ -549,13 +515,6 @@
 
 <!-- Hero -->
 <section id="hero">
-
-  <div class="float-pills">
-    <div class="fpill"><span class="fpill-dot d-sage"></span>Mission Match Engine</div>
-    <div class="fpill"><span class="fpill-dot d-lavender"></span>990 Funder Audit</div>
-    <div class="fpill"><span class="fpill-dot d-peach"></span>Strategic Fit Score</div>
-    <div class="fpill"><span class="fpill-dot d-mint"></span>Board-Ready Brief</div>
-  </div>
 
   <div class="kicker">
     <span class="kicker-pill">Grant Intelligence Platform</span>
